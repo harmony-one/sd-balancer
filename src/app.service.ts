@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import { HttpService } from '@nestjs/axios';
 import { getOperationsWeight } from './helpers';
 
@@ -74,6 +74,8 @@ export class AppService {
     ) {
         this.checkServers();
 
+        setInterval(() => this.checkServers(), 10000);
+
         this.operationsLoop();
     }
 
@@ -124,8 +126,6 @@ export class AppService {
                 }
             }
         }
-
-        setTimeout(() => this.checkServers(), 1000);
     };
 
     selectOptimalServer = (operation: IOperationReq) => {
@@ -147,10 +147,15 @@ export class AppService {
         return server;
     }
 
-    addOperation = (operation: IOperationReq) => {
-        const server = this.selectOptimalServer(operation);
+    addOperation = async (operation: IOperationReq) => {
+        let server = this.selectOptimalServer(operation);
 
-        if(!server) {
+        if (!server) {
+            await this.checkServers();
+            server = this.selectOptimalServer(operation);
+        }
+
+        if (!server) {
             throw new Error('Not founded server for this operation');
         }
 
