@@ -133,6 +133,7 @@ export class AppService {
             s => s.models.includes(operation.model) &&
                 (!operation.lora || s.loras.includes(operation.lora)) &&
                 (!operation.controlnet || s.controlnets.includes(operation.controlnet)) &&
+                (operation.type !== OPERATION_TYPE.TRAIN || !!s.trainAPI) &&
                 s.status === SERVER_STATUS.ONLINE
         );
 
@@ -182,9 +183,18 @@ export class AppService {
         const operation = this.getOperationById(id);
 
         if (operation) {
-            const server = this.getServerById(operation.serverId);
+            const serverFull = this.getServerById(operation.serverId);
 
-            return { ...operation, server };
+            return {
+                ...operation,
+                server: {
+                    comfyAPI: serverFull.comfyAPI,
+                    trainAPI: serverFull.trainAPI,
+                    comfyHost: `http://${serverFull.comfyAPI}`,
+                    comfyWsHost: `ws://${serverFull.comfyAPI}`,
+                },
+                queueNumber: this.getQueueNumber(operation)
+            };
         }
     }
 
@@ -202,16 +212,8 @@ export class AppService {
         }
     }
 
-    operationsLoop = async () => {
+    startOperationsByType = (types: OPERATION_TYPE[]) => {
         try {
-            const operationsInProgress = this.operations.filter(op => op.status === OPERATION_STATUS.IN_PROGRESS);
-
-            operationsInProgress.forEach(op => {
-                if (((Date.now() - op.startTime) / 1000) > MAX_EXECUTION_TIME[op.type]) {
-                    this.completeOperation(op.id, OPERATION_STATUS.CANCELED_BY_BALANCER);
-                }
-            })
-
             this.servers.forEach(server => {
                 const operationsInProgress = this.operations.filter(
                     op => op.status === OPERATION_STATUS.IN_PROGRESS && op.serverId === server.id
@@ -229,6 +231,27 @@ export class AppService {
                 }
             });
         } catch (e) {
+            this.logger.error('startOperationsByType', e);
+        }
+    }
+
+    operationsLoop = async () => {
+        try {
+            const operationsInProgress = this.operations.filter(op => op.status === OPERATION_STATUS.IN_PROGRESS);
+
+            operationsInProgress.forEach(op => {
+                if (((Date.now() - op.startTime) / 1000) > MAX_EXECUTION_TIME[op.type]) {
+                    this.completeOperation(op.id, OPERATION_STATUS.CANCELED_BY_BALANCER);
+                }
+            })
+
+            this.startOperationsByType([
+                OPERATION_TYPE.IMAGE_TO_IMAGE,
+                OPERATION_TYPE.TEXT_TO_IMAGE,
+                OPERATION_TYPE.TEXT_TO_IMAGES,
+            ]);
+            this.startOperationsByType([OPERATION_TYPE.TRAIN]);
+        } catch (e) {
             this.logger.error('operationsLoop', e);
         }
 
@@ -244,5 +267,16 @@ export class AppService {
             servers: this.servers.length,
             operations: this.operations.length
         }
+    }
+
+    getQueueNumber = (operation: IOperation): number => {
+        return this.operations.filter(
+            op => [OPERATION_STATUS.WAITING, OPERATION_STATUS.IN_PROGRESS].includes(op.status) &&
+                op.serverId === operation.serverId
+        ).filter(
+            op => operation.type === OPERATION_TYPE.TRAIN ?
+                op.type === OPERATION_TYPE.TRAIN :
+                op.type !== OPERATION_TYPE.TRAIN
+        ).findIndex(op => op.id === operation.id);
     }
 }

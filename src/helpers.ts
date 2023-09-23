@@ -18,10 +18,16 @@ export const getOperationsWeight = (operations: IOperation[]) => {
                 break;
 
             case OPERATION_TYPE.TRAIN:
-                weight += 10;
+                weight += 0;
                 break;
         }
     });
+
+    const hasTrains = !!operations.filter(op => op.type === OPERATION_TYPE.TRAIN).length;
+
+    if(hasTrains) {
+        weight += 10;
+    }
 
     return weight;
 }
