@@ -93,6 +93,12 @@ export class AppService {
 
                 if (connectedServer) {
                     connectedServer.status = SERVER_STATUS.ONLINE;
+
+                    connectedServer.models = res.data.models || [];
+                    connectedServer.loras = res.data.loras || [];
+                    connectedServer.controlnets = res.data.controlnets || [];
+                    connectedServer.comfyAPI = res.data.comfyAPI;
+                    connectedServer.trainAPI = res.data.trainAPI;
                 } else {
                     this.servers.push({
                         id: uuidv4(),
