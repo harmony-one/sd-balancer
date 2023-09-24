@@ -1,9 +1,11 @@
-import { IOperation, OPERATION_TYPE } from "./app.service";
+import { IOperation, OPERATION_STATUS, OPERATION_TYPE } from "./app.service";
 
 export const getOperationsWeight = (operations: IOperation[]) => {
     let weight = 0;
 
-    operations.forEach(op => {
+    operations.filter(
+        op => [OPERATION_STATUS.WAITING, OPERATION_STATUS.IN_PROGRESS].includes(op.status)
+    ).forEach(op => {
         switch (op.type) {
             case OPERATION_TYPE.TEXT_TO_IMAGE:
                 weight += 1;
@@ -23,9 +25,12 @@ export const getOperationsWeight = (operations: IOperation[]) => {
         }
     });
 
-    const hasTrains = !!operations.filter(op => op.type === OPERATION_TYPE.TRAIN).length;
+    const hasTrains = !!operations.filter(
+        op => [OPERATION_STATUS.WAITING, OPERATION_STATUS.IN_PROGRESS].includes(op.status) &&
+            op.type === OPERATION_TYPE.TRAIN
+    ).length;
 
-    if(hasTrains) {
+    if (hasTrains) {
         weight += 10;
     }
 
