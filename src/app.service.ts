@@ -191,7 +191,7 @@ export class AppService {
                 ...operation,
                 server: {
                     comfyAPI: serverFull.comfyAPI,
-                    trainAPI: serverFull.trainAPI,
+                    trainAPI: `http://${serverFull.trainAPI}`,
                     comfyHost: `http://${serverFull.comfyAPI}`,
                     comfyWsHost: `ws://${serverFull.comfyAPI}`,
                 },
