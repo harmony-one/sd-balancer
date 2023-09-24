@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { HttpService } from '@nestjs/axios';
 import { getOperationsWeight } from './helpers';
+import { sleep } from './utils';
 
 export enum OPERATION_STATUS {
     WAITING = 'WAITING',
@@ -152,6 +153,7 @@ export class AppService {
         let server = this.selectOptimalServer(operation);
 
         if (!server) {
+            await sleep(10000);
             await this.checkServers();
             server = this.selectOptimalServer(operation);
         }
