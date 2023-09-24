@@ -193,7 +193,8 @@ export class AppService {
                     comfyHost: `http://${serverFull.comfyAPI}`,
                     comfyWsHost: `ws://${serverFull.comfyAPI}`,
                 },
-                queueNumber: this.getQueueNumber(operation)
+                queueNumber: this.getQueueNumber(operation),
+                serverNumber: this.getServerNumber(operation.serverId)
             };
         }
     }
@@ -278,5 +279,9 @@ export class AppService {
                 op.type === OPERATION_TYPE.TRAIN :
                 op.type !== OPERATION_TYPE.TRAIN
         ).findIndex(op => op.id === operation.id);
+    }
+
+    getServerNumber = (serverId: string): number => {
+        return this.servers.findIndex(s => s.id === serverId);
     }
 }
