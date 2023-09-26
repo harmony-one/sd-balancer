@@ -202,6 +202,7 @@ export class AppService {
                     comfyWsHost: `ws://${serverFull.comfyAPI}`,
                 },
                 queueNumber: this.getQueueNumber(operation),
+                queueTotalNumber: this.getQueueNumber(operation, true),
                 serverNumber: this.getServerNumber(operation.serverId)
             };
         }
@@ -278,10 +279,10 @@ export class AppService {
         }
     }
 
-    getQueueNumber = (operation: IOperation): number => {
+    getQueueNumber = (operation: IOperation, total = false): number => {
         return this.operations.filter(
             op => [OPERATION_STATUS.WAITING, OPERATION_STATUS.IN_PROGRESS].includes(op.status) &&
-                op.serverId === operation.serverId
+                (total ? true : op.serverId === operation.serverId)
         ).filter(
             op => operation.type === OPERATION_TYPE.TRAIN ?
                 op.type === OPERATION_TYPE.TRAIN :
