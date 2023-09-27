@@ -49,6 +49,7 @@ export interface IServerReq {
     controlnets: string[];
     comfyAPI: string;
     trainAPI: string;
+    comfyUIStats: any;
 }
 
 export enum SERVER_STATUS {
@@ -91,6 +92,10 @@ export class AppService {
             try {
                 const res = await this.httpService.axiosRef.get<IServerReq>(`${serverUrl}/system_stats`);
 
+                const comfyRes = await this.httpService.axiosRef.get(
+                    `http://${res.data.comfyAPI}/system_stats`
+                );
+
                 if (connectedServer) {
                     connectedServer.status = SERVER_STATUS.ONLINE;
 
@@ -99,6 +104,7 @@ export class AppService {
                     connectedServer.controlnets = res.data.controlnets || [];
                     connectedServer.comfyAPI = res.data.comfyAPI;
                     connectedServer.trainAPI = res.data.trainAPI;
+                    connectedServer.comfyUIStats = comfyRes.data;
                 } else {
                     this.servers.push({
                         id: uuidv4(),
@@ -108,7 +114,8 @@ export class AppService {
                         controlnets: res.data.controlnets || [],
                         comfyAPI: res.data.comfyAPI,
                         trainAPI: res.data.trainAPI,
-                        status: SERVER_STATUS.ONLINE
+                        status: SERVER_STATUS.ONLINE,
+                        comfyUIStats: comfyRes.data
                     })
                 }
             } catch (e) {
